@@ -3,4 +3,3 @@ streamlit-webrtc
 ultralytics
 opencv-python-headless
 av
-
