@@ -6,58 +6,82 @@ import queue
 import time
 
 # 1. Page Configuration
-st.set_page_config(page_title="SLR System - UoM", layout="wide")
+st.set_page_config(page_title="SLR System - University of Mosul", layout="wide")
 
-# Official CSS for Side-by-Side Layout and Top-Controls
+# Optimized CSS for Perfect Alignment and Adaptive Contrast
 st.markdown("""
     <style>
-    /* Force WebRTC controls (Start/Stop) to the TOP of the video */
+    /* 1. Force Start button to the TOP */
     div[data-testid="stVerticalBlock"] > div:has(div.stVideo) {
         display: flex;
         flex-direction: column-reverse;
     }
     
-    /* Camera Styling (Small and Professional) */
+    /* 2. Small Professional Camera Side-View */
     .stVideo {
         max-width: 260px !important;
-        border: 2px solid #1E3A8A;
-        border-radius: 8px;
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
         margin-top: 5px;
     }
     
-    /* Header and Department centering */
+    /* 3. Header Styling */
     .header-text {
         text-align: center;
         margin-bottom: 20px;
     }
 
-    /* Fixed Footer for the output */
+    /* 4. FIXED FOOTER (Now at the absolute bottom 0) */
     .fixed-footer {
         position: fixed;
         bottom: 0; left: 0; width: 100%;
-        background-color: #0F172A; 
-        color: #10B981;
+        background-color: #000000; 
+        color: #00FF41; 
         text-align: center; 
-        padding: 10px;
-        font-size: 22px; 
+        padding: 15px;
+        font-size: 26px; 
         font-weight: bold;
         z-index: 1000; 
-        border-top: 2px solid #1E3A8A;
+        border-top: 3px solid #3b82f6;
     }
 
-    /* Button and Slider alignment */
+    /* 5. CREDITS SECTION (With bottom padding to clear the footer) */
+    .credits-box {
+        text-align: center;
+        padding: 40px 0 150px 0; /* Extra padding to ensure credits are seen above footer */
+        font-family: 'Segoe UI', sans-serif;
+    }
+    .label-text {
+        color: #94a3b8;
+        font-size: 14px;
+        font-weight: bold;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+    }
+    .names-text {
+        color: #3b82f6;
+        font-weight: 800;
+        font-size: 22px;
+        margin-bottom: 15px;
+    }
+    .supervisor-name {
+        color: #3b82f6;
+        font-weight: bold;
+        font-size: 19px;
+    }
+
     .stButton>button {
         width: 100%;
         background-color: #DC2626;
         color: white;
-        border-radius: 4px;
-        height: 45px;
+        border-radius: 6px;
+        height: 48px;
         font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Model & Backend Setup
+# 2. Model & Backend Initialization
 @st.cache_resource
 def load_yolo():
     return YOLO('final.pt')
@@ -81,7 +105,7 @@ def clear_all():
         try: result_queue.get_nowait()
         except queue.Empty: break
 
-# 3. Logic Engine
+# 3. Vision Engine (Repeat Detection Logic)
 class VideoTransformer(VideoTransformerBase):
     def __init__(self, threshold):
         self.last_detected = None
@@ -118,20 +142,20 @@ class VideoTransformer(VideoTransformerBase):
 st.markdown('<div class="header-text"><h1>🤟 Sign Language Recognition System</h1><h4>University of Mosul</h4><h5>Computer Engineering Department</h5></div>', unsafe_allow_html=True)
 st.write("---")
 
-# Layout: Left for Controls, Right for Execution
+# Columns: Settings on Left | Detection on Right
 col_left, col_right = st.columns([1, 1], gap="large")
 
 with col_left:
     st.subheader("Settings")
     speed_val = st.slider("Sensitivity", 5, 60, 20)
-    st.write("") # Spacer
+    st.write("") 
     st.button("🗑️ Clear All Text", on_click=clear_all)
 
 with col_right:
     st.subheader("Detection")
-    # Start button will appear ABOVE the video due to CSS
+    # Camera Start is at TOP due to CSS reverse-flex
     webrtc_ctx = webrtc_streamer(
-        key="uom-final-v10", 
+        key="uom-final-v14", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True,
@@ -139,9 +163,22 @@ with col_right:
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 
-# 5. Result Display
+# 5. Output Footer (Placeholder)
 footer_placeholder = st.empty()
 
+# 6. Static Credits Section
+st.write("---")
+st.markdown(f"""
+    <div class="credits-box">
+        <p class="label-text">BY</p>
+        <p class="names-text">Ismail Riyadh Ismail<br>Hayder Laith Salim</p>
+        <br>
+        <p class="label-text">SUPERVISOR</p>
+        <p class="supervisor-name">Asst. Lect. Hiba Dhiya Ali</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# 7. Real-time Output Logic
 while True:
     try:
         new_char = result_queue.get(timeout=0.1)
@@ -156,8 +193,8 @@ while True:
     except queue.Empty:
         pass
     
-    final_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
-    footer_placeholder.markdown(f'<div class="fixed-footer">{final_text}</div>', unsafe_allow_html=True)
+    current_out = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
+    footer_placeholder.markdown(f'<div class="fixed-footer">{current_out}</div>', unsafe_allow_html=True)
     
     time.sleep(0.05)
     if not webrtc_ctx.state.playing and not st.session_state['sentence']:
