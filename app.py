@@ -13,42 +13,58 @@ st.set_page_config(page_title="Smart SLR - Mosul University", layout="wide")
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - High Stability & Large UI
+# CSS - Optimized for Word Wrapping and Visual Stability
 st.markdown("""
     <style>
+    /* 1. Video Styling */
     div[data-testid="stVerticalBlock"] > div:has(div.stVideo) {
         display: flex; flex-direction: column-reverse; align-items: center;
     }
     .stVideo {
         max-width: 480px !important; 
-        border: 4px solid #3b82f6; border-radius: 15px;
-        box-shadow: 0px 10px 25px rgba(0,0,0,0.4);
+        border: 3px solid #3b82f6; border-radius: 15px;
+        box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
     }
+
+    /* 2. Side Translation Box (Left Column) - Fixed Wrapping */
+    .translation-box {
+        background-color: #000000; 
+        color: #00FF41; 
+        text-align: center; 
+        padding: 15px;
+        font-size: 26px; 
+        font-weight: bold;
+        border: 2px solid #3b82f6;
+        border-radius: 10px;
+        margin: 10px 0;
+        min-height: 120px; /* Increased for better visibility */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        /* --- الحل الجذري لمشكلة تقطيع الكلمات --- */
+        word-break: keep-all; /* يمنع قطع الكلمات في المنتصف */
+        overflow-wrap: break-word; /* ينقل الكلمة كاملة للسطر التالي */
+        white-space: normal;
+        line-height: 1.4;
+    }
+
     .header-text { text-align: center; margin-bottom: 25px; }
-    .fixed-footer {
-        position: fixed; bottom: 0; left: 0; width: 100%;
-        background-color: #000000; color: #00FF41; 
-        text-align: center; padding: 22px;
-        font-size: 34px; font-weight: bold;
-        z-index: 2000; border-top: 5px solid #3b82f6;
-    }
+    
     .credits-bottom-box {
-        text-align: center; padding: 40px 0 200px 0;
+        text-align: center; padding: 40px 0 50px 0;
         font-family: 'Segoe UI', sans-serif;
     }
-    .names-text { color: #3b82f6; font-weight: 800; font-size: 26px; }
+    .names-text { color: #3b82f6; font-weight: 800; font-size: 24px; }
+    
     .stButton>button {
         width: 100%; background-color: #DC2626; color: white;
-        border-radius: 10px; height: 50px; font-weight: bold;
+        border-radius: 8px; height: 45px; font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Render Footer
-f_text = st.session_state['sentence'] if st.session_state['sentence'] else "SYSTEM READY..."
-st.markdown(f'<div class="fixed-footer">{f_text}</div>', unsafe_allow_html=True)
-
-# 2. Expanded Dictionary
+# 2. Complete Dictionary Database
 FULL_DICTIONARY = [
     "APPLE", "ABOUT", "AFTER", "ALWAYS", "AND", "BABY", "BALL", "BECAUSE", "BIG", "BOOK",
     "CAN", "CAR", "CLEAN", "COME", "CAT", "DAD", "DAY", "DID", "DIFFERENT", "DO", "DRINK",
@@ -86,7 +102,7 @@ def complete_word(word):
     else:
         st.session_state['sentence'] = word + " "
 
-# 3. Enhanced Vision Processor
+# 3. Vision Processor
 class VideoTransformer(VideoTransformerBase):
     def __init__(self, threshold):
         self.last_detected = None
@@ -95,59 +111,48 @@ class VideoTransformer(VideoTransformerBase):
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        # High-Speed confidence set to 0.35
         results = model(img, conf=0.35, verbose=False)
-        
         annotated_img = results[0].plot()
         if len(results[0].boxes) > 0:
             char_idx = int(results[0].boxes.cls[0])
             char_name = results[0].names[char_idx].upper().strip()
+            if char_name == self.last_detected: self.counter += 1
+            else: self.counter = 0; self.last_detected = char_name
             
-            if char_name == self.last_detected:
-                self.counter += 1
-            else:
-                self.counter = 0
-                self.last_detected = char_name
-
-            # --- تحسين المنطق: جعل الفرق واضحاً جداً للمستخدم ---
-            # الآن، الحساسية العالية (رقم صغير) تجعل الحرف يظهر فوراً
-            # الحساسية المنخفضة (رقم كبير) تجبر المستخدم على الثبات لفترة طويلة جداً
             if self.counter == self.threshold:
                 result_queue.put(char_name)
-            elif self.counter == self.threshold * 4: # تأخير كبير لتكرار الحرف
+            elif self.counter == self.threshold * 4:
                 result_queue.put(char_name)
                 self.counter = self.threshold + 1 
         else:
-            self.counter = 0
-            self.last_detected = None
-            result_queue.put("RESET")
-                
+            self.counter = 0; self.last_detected = None; result_queue.put("RESET")
         return annotated_img
 
-# 4. Balanced UI Construction
+# 4. Interface Setup
 st.markdown('<div class="header-text"><h1>🤟 Smart Sign Language Recognition System</h1><h4>University of Mosul - College of Engineering</h4></div>', unsafe_allow_html=True)
 st.write("---")
 
-col_left, col_mid, col_right = st.columns([1, 2, 2.2], gap="large")
+col_left, col_mid, col_right = st.columns([1, 1.8, 2.2], gap="large")
 
 with col_left:
     st.subheader("⚙️ Control Panel")
-    
-    # --- زيادة مدى السلايدر لجعل التأثير واضحاً (من 3 إلى 100) ---
-    # القيمة 10 هي كتابة سريعة جداً، القيمة 60 تتطلب ثباتاً طويلاً
-    speed_val = st.slider("Detection Delay (Low = Fast)", 3, 100, 15)
-    
+    speed_val = st.slider("Detection Delay", 3, 100, 15)
     st.button("🗑️ Clear Translation", on_click=clear_all)
+    
+    st.write("📝 **Live Translation:**")
+    output_placeholder = st.empty()
+    display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
+    output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
+    
     st.write("---")
     st.write("🔍 **Smart Suggestions:**")
-    
     cur_s = st.session_state['sentence']
-    last_w = cur_s.split()[-1] if cur_s.strip() and not cur_s.endswith(" ") else ""
+    last_word_seg = cur_s.split()[-1] if cur_s.strip() and not cur_s.endswith(" ") else ""
     
-    if last_w:
-        matches = [w for w in FULL_DICTIONARY if w.startswith(last_w.upper()) and w != last_w.upper()]
+    if last_word_seg:
+        matches = [w for w in FULL_DICTIONARY if w.startswith(last_word_seg.upper()) and w != last_word_seg.upper()]
         if matches:
-            for m in matches[:6]:
+            for m in matches[:5]:
                 st.button(f"➕ {m}", key=f"btn_{m}", on_click=complete_word, args=(m,))
         else: st.info("No matches.")
     else: st.info("Signal a letter...")
@@ -155,7 +160,7 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-final-master-v34", 
+        key="uom-final-release-v37", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True, media_stream_constraints={"video": True, "audio": False},
@@ -164,18 +169,17 @@ with col_mid:
 
 with col_right:
     st.subheader("📖 Reference Guide")
-    L_PATH = "asl_guide.png"
-    if os.path.exists(L_PATH):
+    LOCAL_IMAGE_PATH = "asl_guide.png"
+    if os.path.exists(LOCAL_IMAGE_PATH):
         try:
-            img_g = Image.open(L_PATH)
-            # Increased width to 600px for maximum clarity
+            img_g = Image.open(LOCAL_IMAGE_PATH)
             t_w = 600
             w_p = (t_w / float(img_g.size[0]))
             h_s = int((float(img_g.size[1]) * float(w_p)))
             img_g = img_g.resize((t_w, h_s), Image.Resampling.LANCZOS)
-            st.image(img_g, caption='ASL Fingerspelling Reference Chart', width=600)
+            st.image(img_g, caption='Fingerspelling Reference Chart', width=600)
         except Exception as e: st.error(f"Image Error: {e}")
-    else: st.warning("Guide image 'asl_guide.png' missing.")
+    else: st.warning("Guide image missing.")
 
 # 5. Credits
 st.write("---")
@@ -185,11 +189,11 @@ st.markdown(f"""
         <p class="names-text">Ismail Riyadh Ismail & Hayder Laith Salim</p>
         <br>
         <p style="color:#94a3b8; font-weight:bold; letter-spacing:4px;">SUPERVISED BY</p>
-        <p style="color:#3b82f6; font-weight:bold; font-size:24px;">Asst. Lect. Hiba Dhiya Ali</p>
+        <p style="color:#3b82f6; font-weight:bold; font-size:22px;">Asst. Lect. Hiba Dhiya Ali</p>
     </div>
     """, unsafe_allow_html=True)
 
-# 6. Real-time Engine
+# 6. Runtime Engine
 if webrtc_ctx.state.playing:
     while True:
         try:
@@ -201,5 +205,9 @@ if webrtc_ctx.state.playing:
                 else: st.session_state['sentence'] += new_char
                 st.rerun()
         except queue.Empty: pass
+        
+        display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
+        output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
+        
         time.sleep(0.05)
         if not webrtc_ctx.state.playing: break
