@@ -13,21 +13,33 @@ st.set_page_config(page_title="Gestures to Phrases - UoM", layout="wide")
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - Responsive Custom Header, Stability & New Credits Styling
+# CSS - Perfectly Centered & Integrated Header
 st.markdown("""
     <style>
-    /* 1. تنسيق حاوية النصوص المركزية (العنوان) */
-    .text-block-center {
+    /* حاوية الرأس الكاملة - تضمن تمركز كل شيء بداخلها */
+    .full-header-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         text-align: center;
         width: 100%;
+        margin-bottom: 25px;
+    }
+
+    .centered-logo {
+        width: 130px;
+        height: auto;
+        margin-bottom: 15px;
     }
 
     .univ-col-line {
-        font-size: 16px;
+        font-size: 18px;
         color: #ffffff;
         font-weight: bold;
         text-transform: uppercase;
-        margin-bottom: 2px;
+        margin: 0;
+        letter-spacing: 1px;
     }
 
     .dept-line {
@@ -35,11 +47,11 @@ st.markdown("""
         color: #94a3b8;
         font-weight: bold;
         text-transform: uppercase;
-        margin-bottom: 15px;
+        margin: 5px 0 15px 0;
     }
     
     .hero-phrase {
-        font-size: 44px;
+        font-size: 42px;
         font-weight: 800;
         color: #3b82f6;
         letter-spacing: 2px;
@@ -47,7 +59,7 @@ st.markdown("""
         margin: 0;
     }
 
-    /* 2. تنسيق قسم الاعتمادات السفلي (Credits) */
+    /* قسم الاعتمادات السفلي */
     .credits-section {
         text-align: center;
         padding: 50px 0 60px 0;
@@ -55,30 +67,22 @@ st.markdown("""
         margin-top: 50px;
     }
     .credits-label {
-        color: #94a3b8;
-        font-weight: bold;
-        font-size: 12px;
-        letter-spacing: 3px;
-        text-transform: uppercase;
-        margin-bottom: 10px;
+        color: #94a3b8; font-weight: bold; font-size: 12px;
+        letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px;
     }
     .credits-names {
-        color: #3b82f6;
-        font-weight: 800;
-        font-size: 24px;
-        margin-bottom: 25px;
+        color: #3b82f6; font-weight: 800; font-size: 24px; margin-bottom: 20px;
     }
     .credits-supervisor {
-        color: #ffffff;
-        font-weight: bold;
-        font-size: 20px;
+        color: #ffffff; font-weight: bold; font-size: 19px;
     }
 
     /* التجاوب للموبايل */
     @media (max-width: 768px) {
-        .univ-col-line { font-size: 12px !important; }
+        .centered-logo { width: 90px !important; }
+        .univ-col-line { font-size: 13px !important; }
         .dept-line { font-size: 11px !important; }
-        .hero-phrase { font-size: 24px !important; letter-spacing: 1px; }
+        .hero-phrase { font-size: 22px !important; letter-spacing: 1px; }
         .credits-names { font-size: 18px !important; }
         .credits-supervisor { font-size: 16px !important; }
     }
@@ -148,29 +152,35 @@ class VideoTransformer(VideoTransformerBase):
         else: self.counter = 0; self.last_detected = None; result_queue.put("RESET")
         return cv2.resize(annotated_img, (640, 480))
 
-# 4. Interface Setup (Header)
-col_logo_left, col_text, col_logo_right = st.columns([1, 4, 1])
-
-with col_logo_left:
-    if os.path.exists("col.png"): st.image("col.png", width=120)
-    else: st.info("Col Logo")
-
-with col_text:
-    st.markdown("""
-        <div class="text-block-center">
+# 4. Interface Setup (Fully Integrated Centered Header)
+# نستخدم Markdown واحد فقط لضمان دمج الشعار مع النصوص برمجياً وبصرياً
+logo_path = "col.png"
+if os.path.exists(logo_path):
+    # تحويل الصورة إلى Base64 لضمان عرضها داخل الـ Markdown الممركز
+    import base64
+    with open(logo_path, "rb") as f:
+        data = base64.b64encode(f.read()).decode("utf-8")
+    
+    st.markdown(f"""
+        <div class="full-header-container">
+            <img src="data:image/png;base64,{data}" class="centered-logo">
             <p class="univ-col-line">UNIVERSITY OF MOSUL • COLLEGE OF ENGINEERING</p>
             <p class="dept-line">COMPUTER ENGINEERING DEPARTMENT</p>
             <h1 class="hero-phrase">🤟 From Gesture to Phrase</h1>
         </div>
-        """, unsafe_allow_html=True)
-
-with col_logo_right:
-    if os.path.exists("dep.png"): st.image("dep.png", width=120)
-    else: st.info("Dep Logo")
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+        <div class="full-header-container">
+            <p class="univ-col-line">UNIVERSITY OF MOSUL • COLLEGE OF ENGINEERING</p>
+            <p class="dept-line">COMPUTER ENGINEERING DEPARTMENT</p>
+            <h1 class="hero-phrase">🤟 From Gesture to Phrase</h1>
+        </div>
+    """, unsafe_allow_html=True)
 
 st.write("---")
 
-# Main Columns
+# Main Content
 col_left, col_mid = st.columns([1, 2], gap="large")
 
 with col_left:
@@ -196,7 +206,7 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-presentation-v59", 
+        key="uom-final-v61", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True, 
@@ -204,7 +214,7 @@ with col_mid:
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 
-# 5. New Professional Credits Section (Bottom)
+# 5. Professional Credits Section
 st.markdown("""
     <div class="credits-section">
         <p class="credits-label">BY</p>
