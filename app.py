@@ -175,7 +175,7 @@ with col_right:
     if os.path.exists(LOCAL_IMAGE_PATH):
         try:
             img_g = Image.open(LOCAL_IMAGE_PATH)
-            t_w = 600
+            t_w = 400
             w_p = (t_w / float(img_g.size[0]))
             h_s = int((float(img_g.size[1]) * float(w_p)))
             img_g = img_g.resize((t_w, h_s), Image.Resampling.LANCZOS)
