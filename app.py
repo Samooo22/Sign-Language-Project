@@ -13,7 +13,7 @@ st.set_page_config(page_title="Smart SLR - Mosul University", layout="wide")
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - Optimized for Word Wrapping and Visual Stability
+# CSS - Perfectly Aligned Layout & Final Visual Fixes
 st.markdown("""
     <style>
     /* 1. Video Styling */
@@ -26,25 +26,30 @@ st.markdown("""
         box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
     }
 
-    /* 2. Side Translation Box (Left Column) - Fixed Wrapping */
+    /* 2. Side Translation Box (Left Column) - Final Visual Fix */
     .translation-box {
         background-color: #000000; 
         color: #00FF41; 
         text-align: center; 
-        padding: 15px;
+        padding: 15px; /* Increased for better legibility */
         font-size: 26px; 
         font-weight: bold;
         border: 2px solid #3b82f6;
         border-radius: 10px;
         margin: 10px 0;
-        min-height: 120px; /* Increased for better visibility */
+        min-height: 120px;
         display: flex;
         align-items: center;
         justify-content: center;
         
-        /* --- الحل الجذري لمشكلة تقطيع الكلمات --- */
-        word-break: keep-all; /* يمنع قطع الكلمات في المنتصف */
-        overflow-wrap: break-word; /* ينقل الكلمة كاملة للسطر التالي */
+        # --- التعديل الهندسي النهائي: ضمان الاحتواء وعدم التجاوز ---
+        width: 100%; # يملأ العمود تماماً
+        box-sizing: border-box; # يحسب الـ padding والـ border ضمن الـ width لتجنب تجاوزه
+        margin-left: 0 !important; # لضمان المحاذاة اليسرى الكاملة
+        
+        # --- الحفاظ على منطق تقطيع الكلمات الصحيح ---
+        word-break: keep-all; 
+        overflow-wrap: break-word; 
         white-space: normal;
         line-height: 1.4;
     }
@@ -140,6 +145,7 @@ with col_left:
     st.button("🗑️ Clear Translation", on_click=clear_all)
     
     st.write("📝 **Live Translation:**")
+    # نضع صندوق الترجمة محاذى لليسار وله محتوى فارغ ليحافظ على أبعاده
     output_placeholder = st.empty()
     display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
     output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
@@ -160,7 +166,7 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-final-release-v37", 
+        key="uom-final-v38", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True, media_stream_constraints={"video": True, "audio": False},
@@ -206,6 +212,7 @@ if webrtc_ctx.state.playing:
                 st.rerun()
         except queue.Empty: pass
         
+        # تحديث فوري للصندوق الجانبي بنفس التنسيق الجديد
         display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
         output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
         
