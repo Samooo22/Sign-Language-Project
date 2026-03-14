@@ -13,10 +13,10 @@ st.set_page_config(page_title="Gestures to Phrases - UoM", layout="wide")
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - Responsive Custom Header & Stability
+# CSS - Responsive Custom Header, Stability & New Credits Styling
 st.markdown("""
     <style>
-    /* 1. تنسيق حاوية النصوص المركزية */
+    /* 1. تنسيق حاوية النصوص المركزية (العنوان) */
     .text-block-center {
         text-align: center;
         width: 100%;
@@ -39,7 +39,7 @@ st.markdown("""
     }
     
     .hero-phrase {
-        font-size: 44px; /* حجم كبير وفخم للعنوان الأساسي */
+        font-size: 44px;
         font-weight: 800;
         color: #3b82f6;
         letter-spacing: 2px;
@@ -47,14 +47,43 @@ st.markdown("""
         margin: 0;
     }
 
+    /* 2. تنسيق قسم الاعتمادات السفلي (Credits) */
+    .credits-section {
+        text-align: center;
+        padding: 50px 0 60px 0;
+        border-top: 1px solid #333;
+        margin-top: 50px;
+    }
+    .credits-label {
+        color: #94a3b8;
+        font-weight: bold;
+        font-size: 12px;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .credits-names {
+        color: #3b82f6;
+        font-weight: 800;
+        font-size: 24px;
+        margin-bottom: 25px;
+    }
+    .credits-supervisor {
+        color: #ffffff;
+        font-weight: bold;
+        font-size: 20px;
+    }
+
     /* التجاوب للموبايل */
     @media (max-width: 768px) {
         .univ-col-line { font-size: 12px !important; }
         .dept-line { font-size: 11px !important; }
         .hero-phrase { font-size: 24px !important; letter-spacing: 1px; }
+        .credits-names { font-size: 18px !important; }
+        .credits-supervisor { font-size: 16px !important; }
     }
 
-    /* تثبيت أبعاد الكاميرا ومنع الارتجاج */
+    /* تثبيت أبعاد الكاميرا */
     [data-testid="stHorizontalBlock"] { align-items: flex-start !important; }
     .stVideo {
         width: 480px !important; height: 360px !important;
@@ -119,12 +148,11 @@ class VideoTransformer(VideoTransformerBase):
         else: self.counter = 0; self.last_detected = None; result_queue.put("RESET")
         return cv2.resize(annotated_img, (640, 480))
 
-# 4. Interface Setup (Clean Header with Large Logos)
+# 4. Interface Setup (Header)
 col_logo_left, col_text, col_logo_right = st.columns([1, 4, 1])
 
 with col_logo_left:
-    if os.path.exists("col.png"): 
-        st.image("col.png", width=120) # تكبير الشعار
+    if os.path.exists("col.png"): st.image("col.png", width=120)
     else: st.info("Col Logo")
 
 with col_text:
@@ -137,12 +165,12 @@ with col_text:
         """, unsafe_allow_html=True)
 
 with col_logo_right:
-    if os.path.exists("dep.png"): 
-        st.image("dep.png", width=120) # تكبير الشعار
+    if os.path.exists("dep.png"): st.image("dep.png", width=120)
     else: st.info("Dep Logo")
 
 st.write("---")
 
+# Main Columns
 col_left, col_mid = st.columns([1, 2], gap="large")
 
 with col_left:
@@ -168,7 +196,7 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-presentation-v58", 
+        key="uom-presentation-v59", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True, 
@@ -176,7 +204,17 @@ with col_mid:
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 
-# 6. Runtime Engine (Backspace Logic Intact)
+# 5. New Professional Credits Section (Bottom)
+st.markdown("""
+    <div class="credits-section">
+        <p class="credits-label">BY</p>
+        <p class="credits-names">Ismail Riyadh Ismail & Hayder Laith Salim</p>
+        <p class="credits-label">SUPERVISOR</p>
+        <p class="credits-supervisor">Asst. Lect. Hiba Dhiya Ali</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# 6. Runtime Engine
 if webrtc_ctx.state.playing:
     while True:
         try:
