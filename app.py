@@ -13,10 +13,9 @@ st.set_page_config(page_title="Smart SLR - Mosul University", layout="wide")
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - Perfectly Aligned Layout & Final Visual Fixes
+# CSS - Perfectly Aligned Layout
 st.markdown("""
     <style>
-    /* 1. Video Styling */
     div[data-testid="stVerticalBlock"] > div:has(div.stVideo) {
         display: flex; flex-direction: column-reverse; align-items: center;
     }
@@ -26,12 +25,11 @@ st.markdown("""
         box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
     }
 
-    /* 2. Side Translation Box (Left Column) - Final Visual Fix */
     .translation-box {
         background-color: #000000; 
         color: #00FF41; 
         text-align: center; 
-        padding: 15px; /* Increased for better legibility */
+        padding: 15px;
         font-size: 26px; 
         font-weight: bold;
         border: 2px solid #3b82f6;
@@ -41,15 +39,10 @@ st.markdown("""
         display: flex;
         align-items: center;
         justify-content: center;
-        
-        # --- التعديل الهندسي النهائي: ضمان الاحتواء وعدم التجاوز ---
-        width: 100%; # يملأ العمود تماماً
-        box-sizing: border-box; # يحسب الـ padding والـ border ضمن الـ width لتجنب تجاوزه
-        margin-left: 0 !important; # لضمان المحاذاة اليسرى الكاملة
-        
-        # --- الحفاظ على منطق تقطيع الكلمات الصحيح ---
+        width: 100%;
+        box-sizing: border-box;
         word-break: keep-all; 
-        overflow-wrap: break-word; 
+        overflow-wrap: break-word;
         white-space: normal;
         line-height: 1.4;
     }
@@ -60,7 +53,9 @@ st.markdown("""
         text-align: center; padding: 40px 0 50px 0;
         font-family: 'Segoe UI', sans-serif;
     }
-    .names-text { color: #3b82f6; font-weight: 800; font-size: 24px; }
+    .univ-text { color: #94a3b8; font-weight: bold; font-size: 14px; letter-spacing: 3px; }
+    .names-text { color: #3b82f6; font-weight: 800; font-size: 24px; margin-top: 10px; }
+    .supervisor-text { color: #ffffff; font-weight: bold; font-size: 18px; margin-top: 5px; }
     
     .stButton>button {
         width: 100%; background-color: #DC2626; color: white;
@@ -69,7 +64,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Complete Dictionary Database
+# 2. Dictionary Database
 FULL_DICTIONARY = [
     "APPLE", "ABOUT", "AFTER", "ALWAYS", "AND", "BABY", "BALL", "BECAUSE", "BIG", "BOOK",
     "CAN", "CAR", "CLEAN", "COME", "CAT", "DAD", "DAY", "DID", "DIFFERENT", "DO", "DRINK",
@@ -134,7 +129,7 @@ class VideoTransformer(VideoTransformerBase):
         return annotated_img
 
 # 4. Interface Setup
-st.markdown('<div class="header-text"><h1>🤟 Smart Sign Language Recognition System</h1><h4>University of Mosul - College of Engineering</h4></div>', unsafe_allow_html=True)
+st.markdown('<div class="header-text"><h1>🤟 Smart Sign Language Recognition System</h1></div>', unsafe_allow_html=True)
 st.write("---")
 
 col_left, col_mid, col_right = st.columns([1, 1.8, 2.2], gap="large")
@@ -145,7 +140,6 @@ with col_left:
     st.button("🗑️ Clear Translation", on_click=clear_all)
     
     st.write("📝 **Live Translation:**")
-    # نضع صندوق الترجمة محاذى لليسار وله محتوى فارغ ليحافظ على أبعاده
     output_placeholder = st.empty()
     display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
     output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
@@ -166,10 +160,12 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-final-v38", 
+        key="uom-final-v38-optimized", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
-        async_processing=True, media_stream_constraints={"video": True, "audio": False},
+        async_processing=True, 
+        # تقليل جودة الكاميرا لزيادة الاستقرار
+        media_stream_constraints={"video": {"width": 480, "height": 360}, "audio": False},
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 
@@ -187,15 +183,13 @@ with col_right:
         except Exception as e: st.error(f"Image Error: {e}")
     else: st.warning("Guide image missing.")
 
-# 5. Credits
+# 5. Official Credits Section
 st.write("---")
 st.markdown(f"""
     <div class="credits-bottom-box">
-        <p style="color:#94a3b8; font-weight:bold; letter-spacing:4px;">RESEARCH TEAM</p>
+        <p class="univ-text">UNIVERSITY OF MOSUL • COLLEGE OF ENGINEERING</p>
         <p class="names-text">Ismail Riyadh Ismail & Hayder Laith Salim</p>
-        <br>
-        <p style="color:#94a3b8; font-weight:bold; letter-spacing:4px;">SUPERVISED BY</p>
-        <p style="color:#3b82f6; font-weight:bold; font-size:22px;">Asst. Lect. Hiba Dhiya Ali</p>
+        <p class="supervisor-text">Supervised by: Asst. Lect. Hiba Dhiya Ali</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -212,7 +206,6 @@ if webrtc_ctx.state.playing:
                 st.rerun()
         except queue.Empty: pass
         
-        # تحديث فوري للصندوق الجانبي بنفس التنسيق الجديد
         display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
         output_placeholder.markdown(f'<div class="translation-box">{display_text}</div>', unsafe_allow_html=True)
         
