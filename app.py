@@ -8,49 +8,53 @@ import os
 from PIL import Image
 
 # 1. Page Configuration
-st.set_page_config(page_title="Smart SLR - Mosul University", layout="wide")
+st.set_page_config(page_title="Gestures to Phrases - UoM", layout="wide")
 
 # Persistent State
 if 'sentence' not in st.session_state: st.session_state['sentence'] = ""
 
-# CSS - قفل الأبعاد بشكل صارم لمنع التمطط والارتجاج
+# CSS - Focus on "From Gesture to Phrase" Styling
 st.markdown("""
     <style>
-    /* 1. تثبيت العمود الأوسط ومنع التغيير في ارتفاعه */
-    [data-testid="stHorizontalBlock"] {
-        align-items: flex-start !important;
+    /* تنسيق العنوان الوحيد */
+    .main-header {
+        text-align: center;
+        margin-bottom: 20px;
+        padding: 10px;
+    }
+    .hero-phrase {
+        font-size: 38px; /* حجم فخم للكمبيوتر */
+        font-weight: 800;
+        color: #3b82f6; /* اللون الأزرق التقني */
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 0px;
     }
 
-    /* 2. قفل أبعاد الكاميرا ومنع التمطط الطولي */
+    /* --- التعديل الخاص بالموبايل --- */
+    @media (max-width: 768px) {
+        .hero-phrase {
+            font-size: 22px !important; /* حجم متناسق جداً للموبايل */
+            letter-spacing: 0.5px;
+        }
+    }
+
+    /* تثبيت أبعاد الكاميرا ومنع الارتجاج */
+    [data-testid="stHorizontalBlock"] { align-items: flex-start !important; }
     .stVideo {
-        width: 480px !important;
-        height: 360px !important;
-        aspect-ratio: 4 / 3 !important;
-        object-fit: cover !important; /* يضمن عدم تمطط الصورة داخل الإطار */
-        border: 4px solid #3b82f6;
-        border-radius: 15px;
-        overflow: hidden;
+        width: 480px !important; height: 360px !important;
+        aspect-ratio: 4 / 3 !important; object-fit: cover !important;
+        border: 4px solid #3b82f6; border-radius: 15px; overflow: hidden;
     }
 
-    /* 3. تثبيت مكان زر الـ Stop والحاوية */
-    div[data-testid="stVerticalBlock"] > div:has(div.stVideo) {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        min-height: 420px !important; /* مساحة محجوزة مسبقاً للكاميرا والزر */
-        max-height: 420px !important;
-    }
-
-    /* صندوق الترجمة الجانبي */
     .translation-box {
         background-color: #000000; color: #00FF41; text-align: center; 
         padding: 15px; font-size: 26px; font-weight: bold;
         border: 2px solid #3b82f6; border-radius: 10px;
-        min-height: 120px; width: 100%; box-sizing: border-box;
+        min-height: 110px; width: 100%; box-sizing: border-box;
         word-break: keep-all; overflow-wrap: break-word; line-height: 1.4;
     }
 
-    .header-text { text-align: center; margin-bottom: 25px; }
     .credits-bottom-box { text-align: center; padding: 40px 0 50px 0; font-family: 'Segoe UI', sans-serif; }
     .univ-text { color: #94a3b8; font-weight: bold; font-size: 14px; letter-spacing: 3px; }
     .names-text { color: #3b82f6; font-weight: 800; font-size: 22px; margin-top: 10px; }
@@ -64,7 +68,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 2. Complete Dictionary Database
+# 2. Resources
 FULL_DICTIONARY = ["APPLE", "ABOUT", "AFTER", "ALWAYS", "AND", "HELLO", "HELP", "NAME", "MOSUL", "UNIVERSITY", "COMPUTER", "ENGINEERING", "THANK", "YOU", "YES", "NO"]
 
 @st.cache_resource
@@ -95,25 +99,23 @@ class VideoTransformer(VideoTransformerBase):
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        # معالجة بحجم ثابت لضمان استقرار الخرج
         results = model(cv2.resize(img, (320, 320)), conf=0.35, verbose=False)
         annotated_img = results[0].plot() if len(results[0].boxes) > 0 else img
-        
         if len(results[0].boxes) > 0:
             char_idx = int(results[0].boxes.cls[0])
             char_name = results[0].names[char_idx].upper().strip()
             if char_name == self.last_detected: self.counter += 1
             else: self.counter = 0; self.last_detected = char_name
-            if self.counter == self.threshold:
-                result_queue.put(char_name)
-        else:
-            self.counter = 0; self.last_detected = None; result_queue.put("RESET")
-        
-        # التأكد من أن الصورة الخارجة دائماً بنفس الحجم الأصلي للكاميرا
+            if self.counter == self.threshold: result_queue.put(char_name)
+        else: self.counter = 0; self.last_detected = None; result_queue.put("RESET")
         return cv2.resize(annotated_img, (640, 480))
 
-# 4. Interface Setup
-st.markdown('<div class="header-text"><h1>🤟 Smart Sign Language Recognition System</h1></div>', unsafe_allow_html=True)
+# 4. Interface Setup (Minimalist Phrase Header)
+st.markdown("""
+    <div class="main-header">
+        <h1 class="hero-phrase">From Gesture to Phrase</h1>
+    </div>
+    """, unsafe_allow_html=True)
 st.write("---")
 
 col_left, col_mid = st.columns([1, 2], gap="large")
@@ -145,7 +147,7 @@ with col_left:
 with col_mid:
     st.subheader("🎥 Intelligent Feed")
     webrtc_ctx = webrtc_streamer(
-        key="uom-fixed-v50", 
+        key="uom-final-v56-minimal", 
         mode=WebRtcMode.SENDRECV,
         video_transformer_factory=lambda: VideoTransformer(threshold=speed_val),
         async_processing=True, 
@@ -153,7 +155,7 @@ with col_mid:
         rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
     )
 
-# 5. Official Credits Section
+# 5. Official Credits Section (Keeping the bottom credits for academic requirements)
 st.write("---")
 st.markdown(f"""
     <div class="credits-bottom-box">
@@ -163,13 +165,19 @@ st.markdown(f"""
     </div>
     """, unsafe_allow_html=True)
 
-# 6. Runtime Engine
+# 6. Runtime Engine (Stays untouched as requested)
 if webrtc_ctx.state.playing:
     while True:
         try:
             new_char = result_queue.get(timeout=0.1)
             if new_char and new_char != "RESET":
-                st.session_state['sentence'] += new_char
+                if new_char in ["DELETE", "DEL", "DELET"]:
+                    if len(st.session_state['sentence']) > 0:
+                        st.session_state['sentence'] = st.session_state['sentence'][:-1]
+                elif new_char in ["SPACE", "S P A C E", "SPA"]:
+                    st.session_state['sentence'] += " "
+                else:
+                    st.session_state['sentence'] += new_char
                 st.rerun()
         except queue.Empty: pass
         display_text = st.session_state['sentence'] if st.session_state['sentence'] else "READY..."
